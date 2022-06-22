@@ -66,7 +66,7 @@ palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
 palette.setColor(QPalette.HighlightedText, Qt.black)
 app.setPalette(palette)
 
-app.setApplicationName("Media Presenter")
+app.setApplicationName("Ben's Media Presenter")
 
 def strTime(seconds):
     seconds = round(seconds)
@@ -272,7 +272,7 @@ class MainWindow(QMainWindow):
         mainWidget = QWidget()
         mainWidget.setLayout(verticalLayout)
         self.setCentralWidget(mainWidget)
-        self.setWindowTitle("Media Presenter")
+        self.setWindowTitle("Ben's Media Presenter")
 
         # menu = self.menuBar()#.addMenu("&File")
         # file_menu = QMenu("&File", self)

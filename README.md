@@ -12,7 +12,8 @@ Hosts a webserver on port 5000 of all interfaces that gives basic controls
 `$ pip install -r requirements.txt`
 
 #### To Run:
-`$ source .venv/bin/activate`
+Make sure `mediapresenter.py` and `.venv/` are in your working directory, then
+
 `$ python mediapresenter.py`
 
 ## API reference

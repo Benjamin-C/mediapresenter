@@ -1,8 +1,7 @@
-#!/usr/bin/python
+#!.venv/bin/python
 
 # Using https://github.com/jaseg/python-mpv
 import mpv
-import datetime
 
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import *

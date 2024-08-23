@@ -14,6 +14,8 @@ from os.path import isfile, isdir, join
 
 import time
 
+import flask
+
 # The user's home directory
 from os.path import expanduser
 HOME = expanduser("~")
@@ -69,6 +71,11 @@ video_current_filename = '/home/benjamin/Videos/test.mp4'
 video_queue_filename = ''
 
 app = QApplication([])
+api = flask.Flask(__name__)
+
+@api.route("/")
+def api_home():
+    return flask.render_template('index.html')
 
 # Force the style to be the same on all OSs:
 app.setStyle("gtk2")
@@ -544,18 +551,69 @@ window = MainWindow(controlLayout)
 def my_pause_binding():
     controlLayout.pauseVideo()
 
+@api.route('/pause')
+def api_pause():
+    my_pause_binding()
+    return str(player.pause)
+
+@api.route('/stop')
+def api_stop():
+    controlLayout.stopVideo()
+    return str(status.stopped)
+
 @player.on_key_press('left')
 def my_seek_back_binding():
     player.seek(-5)
+
+@api.route('/seekback')
+def api_seek_back():
+    my_seek_back_binding()
+    return "OK"
 
 @player.on_key_press('right')
 def my_seek_forward_binding():
     player.seek(5)
 
+@api.route('/seekforward')
+def api_seek_forward():
+    my_seek_forward_binding()
+    return "OK"
+
 @player.on_key_press('r')
 def my_restart_binding():
     player.seek(0, reference='absolute')
     controlLayout.pauseVideo(True)
+
+@api.route('/seekstart')
+def api_seek_start():
+    my_restart_binding()
+    return "OK"
+
+@api.route('/next')
+def api_next():
+    controlLayout.loadVideo()
+    return "OK"
+
+@api.route('/duration')
+def api_duration():
+    return controlLayout.durLabel.text()
+
+@api.route('/time')
+def api_time():
+    return controlLayout.timeLabel.text()
+
+@api.route('/status')
+def api_status():
+    data = {
+        "duration": controlLayout.durLabel.text(),
+        "time": controlLayout.timeLabel.text(),
+        "stopped": status.stopped,
+        "paused": player.pause,
+        "name": video_current_filename,
+        "next": video_queue_filename
+    }
+    return data
+
 
 print('Got here')
 
@@ -613,11 +671,13 @@ def dur_observer(_name, value):
             controlLayout.loadVideo(config.autoplay_next)
         else:
             controlLayout.stopVideo()
-    # print(f'EOF: {value}')
 
-# timer = QTimer()
-# timer.start(500)  # You may change this if you wish.
-# timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
+class WebServerThread(QThread):
+    def run(self):
+        api.run(host='0.0.0.0')
+
+web_server_thread = WebServerThread()
+web_server_thread.start()  # Start the Web Server thread
 
 print("This application must be closed from the window, ctl+c will not work.")
 window.show()

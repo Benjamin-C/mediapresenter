@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Media Presenter Remote</title>
+    <link rel="stylesheet" href="https://orangeben.dev/dark.css">
+</head>
+<body>
+    <div id="offline" hidden>
+        <h2>MediaPresenter is offline. Attempting to reconnect in <span id="reconnect"></span> seconds</h2><br/>
+        <button onclick="stopCheck()"><h2>Stop</h2></button>
+    </div>
+    <div id="controls">
+        Next: <span id="queue"></span><br/>
+        Current: <span id="nowplaying"></span><br/>
+        <div id="time"></div>
+        <button id="playbutton" onclick="sendRequest('pause')">Play/Pause</button>
+        <button onclick="sendRequest('stop')">Stop</button>
+        <button onclick="sendRequest('next')">Next</button><br/>
+        <button onclick="sendRequest('seekstart')">&lt&lt Start</button>
+        <button onclick="sendRequest('seekback')">&lt&lt</button>
+        <button onclick="sendRequest('seekforward')">&gt&gt</button><br/>
+    </div>
+    <script>
+        function sendRequest(path, onData) {
+            const url = `${window.location.origin}${window.location.pathname}${path}`;
+            
+            fetch(url).then(response => {
+                if(!response.ok) {
+                    throw new Error(`HTTP error: ${response.status}`);
+                }
+            }).then(data => {
+                // console.log('Data received:', data);
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        let onlineInterval = 200
+        let interval = 200
+        // Status updates
+        function restartUpdates() {
+            timer = setInterval(updateStatus, interval);
+            console.log("Update timer restarted");
+        }
+        async function updateStatus() {
+            try {
+                const url = `${window.location.origin}${window.location.pathname}/status`;
+                response = await fetch(url)
+                if(!response.ok) {
+                    console.log(response)
+                    throw new Error("Response was not OK")
+                }
+                const data = await response.json()
+                if(interval != onlineInterval) {
+                    interval = onlineInterval;
+                    // Set timeout to the restarter so it starts in a moment how it is supposed to
+                    timer = setTimeout(restartUpdates, interval)
+                    document.getElementById("controls").hidden = false;
+                    document.getElementById("offline").hidden = true;
+                    console.log("Back online!")
+                }
+                document.getElementById("time").innerHTML = data.time + "/" + data.duration
+                document.getElementById("nowplaying").innerHTML = /[^/]*$/.exec(data.name)[0];
+                document.getElementById("queue").innerHTML = /[^/]*$/.exec(data.next)[0];
+                document.getElementById("playbutton").innerHTML = (data.paused) ? "Play" : "Pause";
+            } catch(e) {
+                console.log(e)
+                if(interval < 1000) {
+                    interval += 100;
+                } else if(interval < 10000) {
+                    interval += 1000;
+                } else if(interval < 30000) {
+                    interval += 10000;
+                } else {
+                    interval = 30000
+                }
+                console.log("Error! Trying again in " + interval/1000 + " seconds")
+                clearInterval(timer)
+                timer = setTimeout(updateStatus, interval)
+                document.getElementById("controls").hidden = true;
+                document.getElementById("offline").hidden = false;
+                document.getElementById("reconnect").innerHTML = Math.round(interval / 1000);
+            }
+        }
+        let timer = setInterval(updateStatus, 200)
+        function stopCheck() {
+            clearTimeout(timer)
+            document.getElementById("offline").innerHTML = "<h2>Auto reconnect stopped. <button onClick='window.location.reload();'><h2>Refresh Page</h2></button> to restart</h2>"
+        }
+    </script>
+</body>
+</html>
